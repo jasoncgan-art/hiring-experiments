@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.DS_Store/
+# Generated data (reproducible via src/make_report.py) — report IS committed
+# so the repo reads standalone on GitHub.
+*.csv
+.env
+*.pem
+*.key
