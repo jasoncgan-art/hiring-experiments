@@ -7,7 +7,8 @@ for n_per_arm applicants per arm and outcome residual std sigma,
     MDE(alpha, power) = (z_{1-alpha/2} + z_{power}) * SE
     n_per_arm(delta)  = ceil(2 * ((z_{1-alpha/2} + z_{power}) * sigma / delta)^2)
 
-Here sigma = 1 (the residual noise std in src/data_gen.py).
+Default sigma is sqrt(2): within-arm outcome SD before covariate adjustment.
+Use sigma=1 only for ideal adjustment under this known synthetic DGP.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from scipy.stats import norm
 
 ALPHA = 0.05
 POWER = 0.80
-SIGMA = 1.0
+SIGMA = math.sqrt(2.0)
 
 
 def mde(n_per_arm: int, sigma: float = SIGMA,
@@ -39,7 +40,8 @@ def power_for(delta: float, n_per_arm: int, sigma: float = SIGMA,
               alpha: float = ALPHA) -> float:
     """Statistical power to detect an effect of size `delta`."""
     se = sigma * math.sqrt(2.0 / n_per_arm)
-    return float(norm.cdf(delta / se - norm.ppf(1 - alpha / 2)))
+    z = norm.ppf(1 - alpha / 2)
+    return float(norm.cdf(delta / se - z) + norm.cdf(-delta / se - z))
 
 
 def power_table(deltas=(0.20, 0.30, 0.35, 0.50), total_ns=(200, 500, 1000, 2000, 4000)):
@@ -75,3 +77,4 @@ def print_power_table() -> None:
 
 if __name__ == "__main__":
     print_power_table()
+

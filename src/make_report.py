@@ -119,8 +119,14 @@ single draw.)
 
 ## 2. Power analysis
 
+The unadjusted outcome has within-arm variance 2 (covariate variance 1 plus
+noise variance 1). The default calculations below therefore use sigma=sqrt(2).
+An ideal covariate-adjusted design uses residual sigma=1 and requires
+{power.required_n_per_arm(TRUE_TAU, sigma=1)} per arm under this known DGP.
+This is a planning approximation, not a universal CUPED sample-size guarantee.
+
 Minimum detectable effect (MDE) and power at several effect sizes
-(alpha = 0.05 two-sided, sigma = 1):
+(alpha = 0.05 two-sided, sigma = sqrt(2), unadjusted outcome SD):
 
 | total N | per arm | MDE | power d=0.20 | power d=0.30 | power d=0.35 | power d=0.50 |
 |---|---|---|---|---|---|---|
@@ -152,7 +158,9 @@ logit(e) = {fmt(b0, 3)} + {fmt(b1, 3)} * assessment_score.
 True tau = 0.35. The naive estimate is biased upward by **+{fmt(naive_bias)}** —
 it mistakes the treated group's pre-existing assessment advantage for a rubric
 effect. IPW removes most of that bias (|error| = {fmt(ipw_err)}) and the doubly
-robust estimator is closest (|error| = {fmt(dr_err)}).
+robust estimator has |error| = {fmt(dr_err)}. In this particular draw,
+the smaller absolute error identifies the closer estimate; no estimator is
+guaranteed to be closest in every finite sample.
 
 **The unconfoundedness assumption.** These corrections are only valid if,
 conditional on `assessment_score`, rubric assignment was as good as random.
@@ -185,3 +193,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

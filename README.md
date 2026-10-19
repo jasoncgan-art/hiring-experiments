@@ -25,7 +25,7 @@ and propensity-score adjustment.
 ## Methodology
 
 1. **`src/data_gen.py`** — generates two datasets with a **known true effect
-   tau = +0.35 SD** baked in (documented in the module docstring):
+   tau = +0.35 residual-noise SD** baked in (documented in the module docstring):
    - *Randomized experiment* (N=2000, 50/50): `perf_90d = 0.35*group +
      1.0*assessment_score + noise`. The pre-experiment covariate
      `assessment_score` is strongly predictive of the outcome (R² ≈ 0.52).
@@ -34,7 +34,7 @@ and propensity-score adjustment.
      (`P(W=1|X) = sigmoid(X + 0.2)`) — documented confounding, so the naive
      comparison is biased upward.
 2. **`src/power.py`** — MDE / sample-size calculator for the two-sample design
-   (sigma = 1), plus a printable power table.
+   (default sigma = sqrt(2) for unadjusted outcomes), plus a printable power table.
 3. **`src/analysis.py`** — randomized-experiment analysis: Welch
    difference-in-means with 95% CI, CUPED using the pre-experiment covariate
    (pooled-theta, reports variance-reduction %), and ANCOVA (OLS-adjusted)
@@ -63,8 +63,9 @@ True effect tau = +0.35 everywhere. Randomized experiment (980 control /
 - Both the raw and CUPED 95% CIs cover the true 0.35. Note the honest detail:
   the raw diff-in-means *underestimated* this draw (0.305) while CUPED landed
   slightly above (0.389) — single draws wobble; the procedure is what's valid.
-- Power: only **129 applicants per arm (258 total)** are needed for 80% power
-  at delta = 0.35; at N = 2000 the MDE is 0.125 and power is ~1.0.
+- Power: the unadjusted design uses outcome SD sqrt(2), while an ideal
+  covariate-adjusted design uses residual SD 1. See the regenerated report for
+  distinct sample-size calculations; 129/arm applies only to the latter.
 
 Observational data (mean assessment: 0.381 treated vs −0.457 control):
 
@@ -77,7 +78,7 @@ Observational data (mean assessment: 0.381 treated vs −0.457 control):
 
 The naive estimate is biased upward by +0.79 — it mistakes the treated group's
 pre-existing assessment advantage for a rubric effect. IPW removes most of the
-bias (|error| = 0.022); doubly robust is closest (|error| = 0.044). Full tables
+bias (|error| = 0.022); doubly robust has |error| = 0.044; IPW is closer in this draw. Full tables
 and the power curve: [`report/report.md`](report/report.md).
 
 ## Assumptions & limitations
@@ -108,18 +109,15 @@ bash run.sh          # venv + pytest + regenerate report/report.md
 Manual steps:
 
 ```bash
-python3 -m venv --system-site-packages .venv   # pinned numpy/pandas/scipy/matplotlib come from OS packages
-.venv/bin/pip install pytest
-PYTHONPATH=. .venv/bin/python -m pytest tests/ -q
-PYTHONPATH=. .venv/bin/python -m src.make_report
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m pytest tests -q
+python -m src.make_report
 ```
 
-`requirements.txt` pins numpy==1.26.4, pandas==2.1.4, scipy==1.11.4,
-matplotlib==3.6.3, pytest==8.3.4 (the exact versions tested here).
-
-*Dockerfile: intentionally skipped.* The stack is CPU-only; the four pinned
-libraries resolve to the exact pinned versions from OS packages
-(`--system-site-packages`, see `run.sh`), so a container image adds no value.
+Dependencies are pinned to the versions used for this revision; the setup no
+longer assumes particular packages happen to be preinstalled by the OS.
 
 ## Layout
 
@@ -135,3 +133,4 @@ tests/            pytest: determinism, CUPED variance reduction, CI coverage,
 report/           report.md + figures/ (committed; regenerable via make_report.py)
 run.sh            end-to-end: venv, install, test, report
 ```
+
